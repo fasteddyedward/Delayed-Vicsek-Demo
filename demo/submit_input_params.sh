@@ -1,8 +1,6 @@
 #!/bin/bash
-job_folder='run1'
-job_folder='run_local_debug'
-# file_name='main_shortmem'
-file_name='main_simp'
+job_folder='example'
+file_name='main'
 
 PWD=$(pwd)
 workdir="$PWD/$job_folder" # workdir="'/scratch/fermi/chen/2023.7.6 All to all cutoff new interactions/Ex1'"
