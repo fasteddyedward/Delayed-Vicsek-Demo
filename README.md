@@ -7,9 +7,11 @@ Instead of updating agent orientations using the standard rule:
 
 $$
 \theta_i(t + 1) = \text{Arg} \left[ \sum_{j \in \mathcal{N}_i} \vec{v}_j(t) \right] + \eta_i(t)
-\\
+$$
+$$
 x_i(t+1) = x_i(t) + v_0 \cos(\theta_i(t+1))
-\\
+$$
+$$
 y_i(t+1) = y_i(t) + v_0 \sin(\theta_i(t+1))
 $$
 
@@ -17,9 +19,10 @@ we introduce update rules that allow both **position** and **orientation** chang
 
 $$
 \frac{{\rm d}\theta_i(t)}{{\rm d}t} =  \sum_{j \in \mathcal{N}_i} J \sin\left(\theta_j(t)-\theta_i(t)\right) + \eta_i(t)
-\\
+$$
+$$
 \frac{{\rm d}x_i(t)}{{\rm d}t} = v_0 \cos(\theta_i(t))
-\\
+$$
 \frac{{\rm d}y_i(t)}{{\rm d}t} = v_0 \sin(\theta_i(t))
 $$
 ---
