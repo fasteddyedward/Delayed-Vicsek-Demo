@@ -103,7 +103,7 @@ std::vector<std::vector<double>> transpose(const std::vector<std::vector<double>
 
 void interp(string filename_x, double delta_t, double dt_in, double dt_out, int pt_interp, int N, vector<vector<double>> &x_interp)
 {
-    int delay_steps_in=ceil(delta_t/(dt_in*pt_interp)); 
+    int delay_steps_in = ceil(delta_t / (dt_in * pt_interp));
     int delay_steps_out = delta_t / dt_out;
 
     vector<vector<double>> x = readDataFromFile_lastnlines(filename_x, delay_steps_in + 1);
@@ -111,8 +111,6 @@ void interp(string filename_x, double delta_t, double dt_in, double dt_out, int 
     if (x.size() < delay_steps_out)
     {
         cerr << "The loaded kernel_x is not long enough for new delta_t!" << endl;
-        // return;
-        // exit;
     }
 
     if (x[0].size() < N)

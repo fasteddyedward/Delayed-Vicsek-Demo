@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
     y_file.open(jsonData["output_folder"].get<string>() + "/" + jsonData["y_file"].get<string>(), ios::out);
     f_y_file.open(jsonData["output_folder"].get<string>() + "/" + jsonData["f_y_file"].get<string>(), ios::out);
-    v_y_file.open(jsonData["output_folder"].get<string>() + "/" + jsonData["v_x_file"].get<string>(), ios::out);
+    v_y_file.open(jsonData["output_folder"].get<string>() + "/" + jsonData["v_y_file"].get<string>(), ios::out);
 
     Order_parameters_file.open(jsonData["output_folder"].get<string>() + "/" + jsonData["Order_parameters_file"].get<string>(), ios::out);
     double cpu_time_used;
@@ -294,9 +294,9 @@ int main(int argc, char *argv[])
         output_kernel(jsonData, jsonData["write_kernel_file"].get<int>(),
                       duration.count(), jsonData["time_limit"].get<double>(), k,
                       jsonData["Obs_time_steps"].get<int>(), x_kernel_file,
-                      y_kernel_file, s_kernel_file, jsonData["x_kernel_file"].get<string>(),
-                      jsonData["y_kernel_file"].get<string>(),
-                      jsonData["s_kernel_file"].get<string>(),
+                      y_kernel_file, s_kernel_file, jsonData["output_folder"].get<string>() + "/" + jsonData["x_kernel_file"].get<string>(),
+                      jsonData["output_folder"].get<string>() + "/" + jsonData["y_kernel_file"].get<string>(),
+                      jsonData["output_folder"].get<string>() + "/" + jsonData["s_kernel_file"].get<string>(),
                       x_recorded,
                       y_recorded, s_recorded, jsonData["N"].get<int>(), delay_steps);
 
@@ -304,9 +304,9 @@ int main(int argc, char *argv[])
             jsonData, jsonData["write_screen_shot"].get<int>(), duration.count(),
             jsonData["time_limit"].get<double>(), k,
             jsonData["Obs_time_steps"].get<int>(), x_screenshot_file,
-            y_screenshot_file, s_screenshot_file, jsonData["x_screenshot_file"].get<string>(),
-            jsonData["y_screenshot_file"].get<string>(),
-            jsonData["s_screenshot_file"].get<string>(),
+            y_screenshot_file, s_screenshot_file, jsonData["output_folder"].get<string>() + "/" + jsonData["x_screenshot_file"].get<string>(),
+            jsonData["output_folder"].get<string>() + "/" + jsonData["y_screenshot_file"].get<string>(),
+            jsonData["output_folder"].get<string>() + "/" + jsonData["s_screenshot_file"].get<string>(),
             x_recorded[delay_steps],
             y_recorded[delay_steps],
             s_recorded[delay_steps],

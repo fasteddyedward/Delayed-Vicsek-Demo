@@ -1,0 +1,1 @@
+/scratch/fermi/chen/Delayed Vicsek Demo/demo/example/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.5, dt=0.01

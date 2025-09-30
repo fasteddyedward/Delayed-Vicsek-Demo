@@ -3,72 +3,68 @@ job_folder='example'
 file_name='main'
 
 PWD=$(pwd)
-workdir="$PWD/$job_folder" # workdir="'/scratch/fermi/chen/2023.7.6 All to all cutoff new interactions/Ex1'"
+workdir="$PWD/$job_folder" 
 
-# region #### Setting parameters
+#### Setting running parameters
 engine='Vicsek_XY_BU' # 'Vicsek_XY_BU', 'Vicsek_XY_FU'
-# noise_type="Gaussian" #"uniform", "Gaussian"
-noise_type="uniform"
-D_0_J_array=(1)
-delta_t_array=($(seq 0.0 0.1 1.0))
-delta_t_array=(0.0)
-v_0_array=(0.5)
-range_array=(1.0)
+noise_type="uniform" # "Gaussian" #"uniform", "Gaussian"
+D_0_array=(0.01) # diffusion constant
+delta_t_array=(0.1 0.5) # time delay
+v_0_array=(0.5) # self-propulsion speed
+range_array=(1.0) # interaction range
 rho=2
-L_box_x=2
+L_box_x=10
 L_box_y=$L_box_x;
 N_array=($(printf "%.0f" $(echo "$L_box_x * $L_box_y * $rho" | bc)));
 dt=0.01
 J_array=(1.0)
-dt=0.001
 random_seed=0 # 1 for random seed, 0 for fixed seed for random number
 aligned_init=1 # 1 for aligned initial condition, 0 for random initial condition
-boundary_shift=0;
-Delta_L=0
-frame_rotate=0
-rot_angle=0.0
+
+## Shift entering position when crossing the periodic boundaries
+boundary_shift=0 # 0 for no shift, 1 for shift
+Delta_L=0 # Shift distance by Delta_L if boundary_shift=1
+
+## Rotate the frame by rot_angle degree at each time step
+frame_rotate=0 # 0 for no rotation, 1 for rotation
+rot_angle=0.0 # in radians, positive for counter-clockwise, negative for clockwise
 
 
 ## Running Durations
-Obs_time_steps=2e6
+Obs_time_steps=2e4 #  Total observation time steps
 Obs_time_steps=$(printf "%0.0f" "$Obs_time_steps")
-loop_total=1
+
+## SLURM parameters
 partition='batch' # student or batch, see sinfo
-time_limit=2
+time_limit=2 ## in days
 timeout='2d' ## 1s, 1m, 1h, 1d...etc
 sbatch_file="sbatch_file.sh"
 
 ## Recording files
-write_file=1 ## 1 to write, 0 to not write
-write_kernel_file=1 ## 1 to write kernel_x.txt, 0 to not write# write_file_loop_cutoff=0 ## Start writing files from the nth loop (0-based; 0 for including all loops, and loop_total-1 for no recording)
+write_file=1 ## 1 to write data files, 0 to not write
+write_kernel_file=1 ## 1 to write the history function 
 write_screen_shot=1 ## 1 to screen shot position config at the end of each loop
-interval_OP=100 #dt=0.001, Obstime=2e6
-# Choose one from below
-
-## Option 0: recording everything; only do this for 1~5 parameter sets.
-interval=10000 #dt=0.001 Obstime=2e6
+interval_OP=100 # recording order parameters every interval_OP time steps
+interval=100 # recording data every interval time steps
 write_file_loop_cutoff=0 ## Start writing files from the nth loop (0-based; 0 for including all loops, and loop_total-1 for no recording)
 
-# region #### Createing Jobfolder Directory if doesn't exist
+#### Createing Jobfolder Directory if doesn't exist
 if [ ! -d "$job_folder" ]; then
     echo "Creating folder $job_folder"
     mkdir "$job_folder"
 fi
-# endregion
 
 rm "$workdir/parameters.txt"
 
 for J in ${J_array[@]}; do
     for range in ${range_array[@]}; do
-
-        for D_0 in ${D_0_J_array[@]}; do
-
+        for D_0 in ${D_0_array[@]}; do
             for N in ${N_array[@]}; do
                 for delta_t in ${delta_t_array[@]}; do
                     for v_0 in ${v_0_array[@]}; do
 
                         for cpu_task in 1; do
-                            # region  ### Calculating mem in MB's
+                            ### Calculating mem in MB's
                             safe=4
                             mem=$(awk "BEGIN { printf \"%.0f\", 24*$N*($delta_t/$dt+1)/1000000*$safe}")MB
 
@@ -76,19 +72,13 @@ for J in ${J_array[@]}; do
                                 mem=2GB
                             fi
 
-                            # endregion
                             load_file_name="No Loading"
                             output_folder="$workdir/N=$N, D_0=$D_0, J=$J, v_0=$v_0, aligned_init=$aligned_init, delta_t=$delta_t, dt=$dt"
-
                             job_name="$job_folder"
                             input_file="input.json"
                             output_file="output.json"
-                            # endregion
-
                             echo "$output_folder" >> "$workdir/parameters.txt"
-
-
-                            # region    #### Writing input parameters ot $input_file
+                             #### Writing input parameters ot $input_file
                             input_data='{
                             "D_0": '"$D_0"',
                             "N": '"$N"',
@@ -147,18 +137,15 @@ for J in ${J_array[@]}; do
                             "frame_rotate": '"$frame_rotate"',
                             "rot_angle": '"$rot_angle"'
                             }'
-                            # endregion
                             echo "$input_data" >"$input_file"
 
-                            # region #### Createing Output Directory if doesn't exist
+                            #### Createing Output Directory if doesn't exist
                             if [ ! -d "$output_folder" ]; then
                                 echo "Creating folder $output_folder"
                                 mkdir "$output_folder"
                             fi
-                            # endregion
 
-                            mv $input_file "$output_folder" ## MODIFIED: this $job_folder -> $output_folder
-                            # echo $input_file has been moved to "$output_folder"
+                            mv $input_file "$output_folder" 
                             echo mem=$mem
                         done
 
