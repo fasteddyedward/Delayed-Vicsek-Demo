@@ -39,50 +39,108 @@ int main(int argc, char *argv[])
     // ifstream file("parameters.txt");
     // /////////////////////////////////////////////////////////////////
 
-    // Here we choose whether to run locally or on SLURM
-    int index;
-    ifstream file;
+    // -----------------------------------------------------------------------------
+    // Choose input mode
+    //
+    // Mode 1: default example mode
+    //   ./build/delayed_vicsek
+    //
+    // Mode 2: direct JSON input mode
+    //   ./build/delayed_vicsek path/to/input.json
+    //
+    // Mode 3: legacy batch mode
+    //   ./build/delayed_vicsek --index INDEX
+    //   This reads parameters.txt in the current working directory.
+    // -----------------------------------------------------------------------------
+
+    json jsonData;
+    std::string input_json_file;
+    cout<<"argc=="<<argc<<endl;
+    for (int i=0;i<argc;i++){
+        cout<<"argv="<<argv[i]<<endl;
+    }
     if (argc == 1)
     {
-        // === Option 1: run the file directly  ===
-        cout << "Starting Option 1: run with example" << endl;
-        cout << "If not working, did you run ./submit_input_params already so that example/parameters.txt is created?" << endl;
-        index = 0;
-        file.open("example/parameters.txt");
+        // Default example mode.
+        // Try both paths so the executable works when launched either from
+        // the repository root or from inside src/.
+        std::vector<std::string> candidate_paths = {
+            "../example/input.json",
+            "../example/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.5, dt=0.01/input.json"
+        };
+
+        bool found_default_input = false;
+
+        for (const auto& candidate : candidate_paths)
+        {
+            std::ifstream test_file(candidate);
+            if (test_file.good())
+            {
+                input_json_file = candidate;
+                found_default_input = true;
+                break;
+            }
+        }
+
+        if (!found_default_input)
+        {
+            std::cerr << "No input file was provided, and no default example input file was found.\n"
+                    << "Expected one of:\n"
+                    << "  src/example/input.json\n"
+                    << "  example/input.json\n"
+                    << "\nUsage:\n"
+                    << "  " << argv[0] << "\n"
+                    << "  " << argv[0] << " path/to/input.json\n"
+                    << "  " << argv[0] << " --index INDEX\n";
+            return 1;
+        }
+
+        std::cout << "Running default example input file: " << input_json_file << std::endl;
     }
     else if (argc == 2)
     {
-        // === Option 2: run the file on SLURM  ===
-        cout << "Starting Option 2: run with submit_input_params.sh" << endl;
-        cout << "If not working, are you sure that you compiled the main.cpp again?" << endl;
-        index = atoi(argv[1]);
-        file.open("parameters.txt");
-        cout << file.good() << endl;
+        // Direct input-file mode.
+        input_json_file = argv[1];
+        std::cout << "Running with input file: " << input_json_file << std::endl;
     }
-
-    if (!file.is_open())
+    else if (argc == 3 && std::string(argv[1]) == "--index")
     {
-        cerr << "Failed to open parameter file." << endl;
+        // Legacy parameter-list mode for batch workflows.
+        int index = std::atoi(argv[2]);
+        std::ifstream file("parameters.txt");
+
+        if (!file.is_open())
+        {
+            std::cerr << "Failed to open parameter file: parameters.txt" << std::endl;
+            return 1;
+        }
+
+        std::vector<std::string> lines;
+        std::string line;
+
+        while (std::getline(file, line))
+        {
+            lines.push_back(line);
+        }
+
+        if (index < 0 || index >= static_cast<int>(lines.size()))
+        {
+            std::cerr << "Index out of range." << std::endl;
+            return 1;
+        }
+
+        input_json_file = lines[index] + "/input.json";
+        std::cout << "Running with input file from parameter list: "
+                << input_json_file << std::endl;
+    }
+    else
+    {
+        std::cerr << "Usage:\n"
+                << "  " << argv[0] << "\n"
+                << "  " << argv[0] << " path/to/input.json\n"
+                << "  " << argv[0] << " --index INDEX\n";
         return 1;
     }
-
-    vector<string> lines;
-    string line;
-    while (getline(file, line))
-    {
-        lines.push_back(line);
-    }
-
-    if (index < 0 || index >= lines.size())
-    {
-        cerr << "Index out of range." << endl;
-        return 1;
-    }
-
-    // Define a JSON object
-    json jsonData;
-    string input_json_file = lines[index] + "/input.json";
-    cout << "Running with input file: " << input_json_file << endl;
 
     input_json_parse(input_json_file, jsonData);
 
