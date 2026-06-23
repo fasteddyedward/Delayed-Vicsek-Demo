@@ -1,1 +1,21 @@
 GPT/*
+# Build artifacts
+main
+*.out
+*.o
+*.exe
+build/
+
+# Generated simulation outputs
+outputs/
+results/
+demo/example/
+examples/*/output/
+
+# Python/Jupyter cache
+__pycache__/
+.ipynb_checkpoints/
+
+# OS/editor files
+.DS_Store
+.vscode/
