@@ -1,15 +1,29 @@
 GPT/*
 # Build artifacts
 main
-*.out
 *.o
 *.exe
 build/
 
+# run-example_local files other than the json file.
+example_local/**/x.txt
+example_local/**/y.txt
+example_local/**/s.txt
+example_local/**/v_x.txt
+example_local/**/v_y.txt
+example_local/**/f_x.txt
+example_local/**/f_y.txt
+example_local/**/f_s.txt
+example_local/**/x_kernel.txt
+example_local/**/y_kernel.txt
+example_local/**/s_kernel.txt
+example_local/**/x_screenshot.txt
+example_local/**/y_screenshot.txt
+example_local/**/s_screenshot.txt
+example_local/**/Order_parameters.txt
+
 # Generated simulation outputs
-outputs/
-results/
-example_slurm
+example_slurm/
 
 # Python/Jupyter cache
 __pycache__/
