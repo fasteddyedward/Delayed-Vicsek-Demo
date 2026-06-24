@@ -1,0 +1,4 @@
+example/N=200, D_0=0, J=1.0, v_0=0.5, aligned_init=1, delta_t=0, dt=0.01/input.json
+example/N=200, D_0=0, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.1, dt=0.01/input.json
+example/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0, dt=0.01/input.json
+example/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.1, dt=0.01/input.json

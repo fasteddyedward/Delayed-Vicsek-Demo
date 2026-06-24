@@ -13,7 +13,7 @@ set -euo pipefail
 # Optional environment variables:
 # PARTITION=batch
 # MEM=1G
-# TIME_LIMIT=1-00:00:00
+# TIMEOUT=1-00:00:00
 # EXECUTABLE=build/delayed_vicsek
 
 if [ "$#" -lt 1 ]; then
@@ -23,11 +23,16 @@ fi
 
 parameters_file="$1"
 job_name="${2:-delayed_vicsek}"
+# executable="$3"
+# executable="${EXECUTABLE:-build/delayed_vicsek}"
+
 
 partition="${PARTITION:-batch}"
 mem="${MEM:-1G}"
-time_limit="${TIME_LIMIT:-1-00:00:00}"
+timeout="${TIMEOUT:-1-00:00:00}"
 executable="${EXECUTABLE:-build/delayed_vicsek}"
+cpus_per_task="${CPUS_PER_TASK:-1}"
+# Question: So : seperates the input values and the default values? Answer: Yes
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
@@ -62,7 +67,8 @@ fi
 
 array_max=$((num_jobs - 1))
 sbatch_file="$output_dir/sbatch_array_${job_name}.sh"
-
+echo Still running
+echo "$sbatch_file"
 cat > "$sbatch_file" <<'EOF'
 #!/bin/bash
 set -euo pipefail
@@ -90,6 +96,7 @@ echo
 
 time "$EXECUTABLE" "$input_json"
 EOF
+echo Still running 2
 
 chmod +x "$sbatch_file"
 
@@ -97,16 +104,18 @@ echo "Submitting array job with $num_jobs task(s)."
 echo "Array range: 0-$array_max"
 echo "Partition: $partition"
 echo "Memory: $mem"
-echo "Time limit: $time_limit"
+echo "Time out: $timeout"
 
-sbatch 
---job-name="$job_name" 
---partition="$partition" 
---mem="$mem" 
---time="$time_limit" 
---chdir="$repo_root" 
---output="$output_dir/slurm-%A_%a.out" 
---error="$output_dir/slurm-%A_%a.err" 
---array="0-$array_max" 
---export=ALL,PARAMETERS_FILE="$parameters_file_abs",EXECUTABLE="$executable_abs" 
+
+sbatch \
+--job-name="$job_name" \
+--partition="$partition" \
+--mem="$mem" \
+--time="$timeout" \
+--cpus-per-task="$cpus_per_task" \
+--chdir="$repo_root" \
+--output="$output_dir/slurm-%A_%a.out" \
+--error="$output_dir/slurm-%A_%a.err" \
+--array="0-$array_max" \
+--export=ALL,PARAMETERS_FILE="$parameters_file_abs",EXECUTABLE="$executable_abs" \
 "$sbatch_file"
