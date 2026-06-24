@@ -1,12 +1,12 @@
 #!/bin/bash
-# set -euo pipefail
+set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # REPO_ROOT=$(pwd)
 echo $REPO_ROOT
 cd "$REPO_ROOT"
 
-job_folder="example"
+job_folder="example_slurm"
 workdir="$REPO_ROOT/$job_folder"
 parameters_file="$workdir/parameters.txt"
 executable="build/delayed_vicsek"
@@ -16,8 +16,8 @@ executable="build/delayed_vicsek"
 engine="Vicsek_XY_BU"          # "Vicsek_XY_BU", "Vicsek_XY_FU"
 noise_type="uniform"          # "uniform", "Gaussian"
 
-D_0_array=(0.01)
-delta_t_array=(0.1)
+D_0_array=(0 0.01)
+delta_t_array=(0 0.1)
 v_0_array=(0.5)
 range_array=(1.0)
 J_array=(1.0)
@@ -47,7 +47,13 @@ Obs_time_steps=$(printf "%0.0f" "$Obs_time_steps")
 #### SLURM parameters
 
 partition="batch"
-time_limit="2-00:00:00"   # SLURM format: days-hours:minutes:seconds
+# time_limit="2-00:00:00"   # SLURM format: days-hours:minutes:seconds
+time_limit=2   
+timeout='2d' # SLURM format: days-hours:minutes:seconds
+
+max_mem_mb=1000
+max_cpu_task=1
+min_mem_mb=512
 
 #### Recording files
 
@@ -63,7 +69,7 @@ write_file_loop_cutoff=0
 mkdir -p "$workdir"
 : > "$parameters_file"
 
-max_mem_mb=1
+
 
 for J in "${J_array[@]}"; do
 for range in "${range_array[@]}"; do
@@ -72,22 +78,28 @@ for N in "${N_array[@]}"; do
 for delta_t in "${delta_t_array[@]}"; do
 for v_0 in "${v_0_array[@]}"; do
 for cpu_task in 1; do
-
-```
                         safe=4
                         mem_mb=$(awk "BEGIN { printf \"%.0f\", 24*$N*($delta_t/$dt+1)/1000000*$safe }")
 
-                        if [ "$mem_mb" -lt 1 ]; then
-                            mem_mb=1
+                        safe=4
+                        mem_mb=$(awk "BEGIN { printf \"%.0f\", 24*$N*($delta_t/$dt+1)/1000000*$safe }")
+
+                        if [ "$mem_mb" -lt "$min_mem_mb" ]; then
+                            mem_mb="$min_mem_mb"
                         fi
 
-                        if [ "$delta_t" = "0.0" ]; then
+                        if awk "BEGIN { exit !($delta_t == 0) }"; then
                             mem_mb=2048
                         fi
 
                         if [ "$mem_mb" -gt "$max_mem_mb" ]; then
                             max_mem_mb="$mem_mb"
                         fi
+
+                        if [ "$cpu_task" -gt "$max_cpu_task" ]; then
+                            max_cpu_task="$cpu_task"
+                        fi
+
 
                         load_file_name="No Loading"
 
@@ -155,7 +167,8 @@ for cpu_task in 1; do
 "mem": "${mem_mb}MB",
 "random_seed": $random_seed,
 "aligned_init": $aligned_init,
-"time_limit": "$time_limit",
+"time_limit": $time_limit,
+"timeout": "$timeout",
 "engine": "$engine",
 "noise_type": "$noise_type",
 "frame_rotate": $frame_rotate,
@@ -171,7 +184,6 @@ EOF
         done
     done
 done
-```
 
 done
 
@@ -193,12 +205,22 @@ make
 
 source_file="$(basename "$0")"
 timestamp=$(date +"%Y.%m.%d.%H-%M-%S")
-cp "$0" "$workdir/$source_file.$timestamp"
+cp "$0" "$workdir/$source_file.$timestamp.backupfile"
+
 
 #### Submit one SLURM array job
 
-PARTITION="$partition" 
-MEM="${max_mem_mb}MB" 
-TIME_LIMIT="$time_limit" 
-EXECUTABLE="$executable" 
+PARTITION="$partition" \
+MEM="${max_mem_mb}MB" \
+TIMEOUT="$timeout" \
+EXECUTABLE="$executable" \
+CPUS_PER_TASK="$max_cpu_task" \
+
 bash scripts/submit_array_sbatch.sh "$parameters_file" "$job_folder"
+# Question: Here how do we pass all the environments like PARTITION MEM and TIME_LIMIT to the bash?
+
+
+### Here we also have to pass these variables into the submit_array_sbatch. See submit_input_params.sh with  
+# ./submit_sbatch.sh "$sbatch_file" "$job_name" "$partition" "$workdir" "$mem" "$cpu_task" "$timeout" "$file_name" "$output_folder"
+
+# bash scripts/submit_array_sbatch.sh "$parameters_file" "$job_folder" "$executable"

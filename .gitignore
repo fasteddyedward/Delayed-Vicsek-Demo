@@ -9,8 +9,7 @@ build/
 # Generated simulation outputs
 outputs/
 results/
-demo/example/
-examples/*/output/
+example_slurm
 
 # Python/Jupyter cache
 __pycache__/
