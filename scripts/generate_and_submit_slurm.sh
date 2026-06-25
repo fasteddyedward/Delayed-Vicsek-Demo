@@ -16,8 +16,8 @@ executable="build/delayed_vicsek"
 engine="Vicsek_XY_BU"          # "Vicsek_XY_BU", "Vicsek_XY_FU"
 noise_type="uniform"          # "uniform", "Gaussian"
 
-D_0_array=(0 0.01)
-delta_t_array=(0 0.1)
+D_0_array=(0.0 0.1 0.2 0.5 1.0)
+delta_t_array=($(seq 0 1 5))
 v_0_array=(0.5)
 range_array=(1.0)
 J_array=(1.0)
@@ -29,7 +29,7 @@ N_array=($(printf "%.0f" "$(echo "$L_box_x * $L_box_y * $rho" | bc)"))
 
 dt=0.01
 random_seed=0
-aligned_init=1
+aligned_init=0
 
 boundary_shift=0
 Delta_L=0

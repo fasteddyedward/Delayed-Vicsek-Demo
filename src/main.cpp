@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
         output_OP_file(jsonData["write_file"].get<int>(), k,
                        jsonData["interval_OP"].get<int>(),
                        jsonData["write_file_loop_cutoff"].get<int>(),
-                       Order_parameters_file, polarization(v_x_present, v_y_present));
+                       Order_parameters_file, polarization(s_recorded));
 
         // Writing k every 5 percent
         k_5_percent(

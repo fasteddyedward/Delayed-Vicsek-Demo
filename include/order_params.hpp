@@ -1,6 +1,6 @@
 #include <cmath>
 #include <vector>
-
+#include <debug.hpp>
 using namespace std;
 
 inline vector<double> get_vel(vector<vector<double>> &x_recorded, double dt,
@@ -80,18 +80,37 @@ inline double mean_speed3D(vector<double> &v_x, vector<double> &v_y,
   return v_mean;
 }
 
-inline double polarization(vector<double> &F_x, vector<double> &F_y)
+// inline double polarization(vector<double> &F_x, vector<double> &F_y)
+// {
+//   vector<double> F_mean(2, 0);
+//   int N = F_x.size();
+//   for (int i = 0; i < N; i++)
+//   {
+//     F_mean[0] = F_mean[0] + F_x[i];
+//     F_mean[1] = F_mean[1] + F_y[i];
+//   }
+//   F_mean[0] = F_mean[0] / N;
+//   F_mean[1] = F_mean[1] / N;
+
+//   double pol = sqrt(F_mean[0] * F_mean[0] + F_mean[1] * F_mean[1]);
+//   return pol;
+// }
+
+inline double polarization(vector<vector<double>> &s_recorded)
 {
+
+  int N = s_recorded[0].size();
+  int k = s_recorded.size(); // e.g. delay_steps=0;
+
+
   vector<double> F_mean(2, 0);
-  int N = F_x.size();
   for (int i = 0; i < N; i++)
   {
-    F_mean[0] = F_mean[0] + F_x[i];
-    F_mean[1] = F_mean[1] + F_y[i];
+    F_mean[0] = F_mean[0] + cos(s_recorded[k-1][i]);
+    F_mean[1] = F_mean[1] + sin(s_recorded[k-1][i]);
   }
   F_mean[0] = F_mean[0] / N;
   F_mean[1] = F_mean[1] / N;
-
   double pol = sqrt(F_mean[0] * F_mean[0] + F_mean[1] * F_mean[1]);
   return pol;
 }

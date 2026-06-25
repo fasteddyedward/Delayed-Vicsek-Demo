@@ -18,4 +18,5 @@ void print_array_1(vector<double> x){
         for (int i=0;i<x.size();i++){
             cout<<x[i]<<" ";
     }
+    cout<<endl;
 }
