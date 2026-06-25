@@ -1,80 +1,180 @@
-## Copied from analysis/Order_Parameters/2025.1.29 polarization/p2_write_P5.py
-## Adding in variance of polarization and making the length larger.
-import os
+#!/usr/bin/env python3
+
+"""
+Summarize delayed Vicsek simulation outputs.
+
+This script searches a run directory for simulation folders containing both
+input.json and Order_parameters.txt. For each completed simulation, it computes
+late-time averages over the final fraction of the recorded time series and writes
+one compact summary table.
+
+Example:
+    python analysis/summarize_order_parameters.py \
+        --run-dir example_slurm \
+        --output analysis/polarization_summary.txt
+"""
+
+from __future__ import annotations
+
+import argparse
 import json
+from pathlib import Path
+
 import numpy as np
-import posixpath
-  
-  
-# === Settings ===
-print("Proj5")
-run="run35"
 
-base_path="F:/Linux ITP/2024.6.24 All2all cutoff/analysis/Order_Parameters/2026.2.18 polarization"
-run_folder = f"F:/Linux ITP/2024.6.24 All2all cutoff/P5_dist_dep_delay/{run}"
 
-# base_path="/scratch/fermi/chen/2024.6.24 All2all cutoff/analysis/Order_Parameters/2025.1.29 polarization"
-# run_folder = f"/scratch/fermi/chen/2024.6.24 All2all cutoff/P5_dist_dep_delay/{run}"
+HEADER = (
+    "N D_0 v_0 range delta_t dt J "
+    "v_mean v_var E_spring speed_mean polarization pol_var\n"
+)
 
-# v_file_path = posixpath.join(base_path,f"p_P5_{run}.txt")
-v_file_path = posixpath.join(base_path,f"p_P5_{run}.txt")
 
-print(v_file_path)
+def read_order_parameters(path: Path) -> np.ndarray:
+    """Read Order_parameters.txt and return a 2D NumPy array."""
+    data = np.loadtxt(path, skiprows=1)
 
-# === Output file setup ===
-with open(v_file_path, 'w') as v_file:
-    header = "N D_0 v_0 range delta_t dt c v_mean v_var E_spring speed_mean polarization pol_var\n"
-    v_file.write(header)
+    if data.ndim == 1:
+        data = np.expand_dims(data, axis=0)
 
-    # === Loop over subfolders ===
-    for subfolder in sorted(os.listdir(run_folder)):
-        subfolder_path = os.path.join(run_folder, subfolder)
-        print(f"Processing subfolder: {subfolder_path}")
-        if not os.path.isdir(subfolder_path):
-            continue
+    return data
 
-        json_path = os.path.join(subfolder_path, "input.json")
-        if not os.path.isfile(json_path):
-            continue
 
-        try:
-            with open(json_path, "r") as f:
-                json_data = json.load(f)
-        except Exception as e:
-            print(f"Could not read JSON in {subfolder}: {e}")
-            continue
+def summarize_single_run(input_json_path: Path, window_fraction: float) -> dict | None:
+    """Summarize one simulation folder."""
+    run_dir = input_json_path.parent
+    order_parameter_path = run_dir / "Order_parameters.txt"
 
-        op_file_path = os.path.join(subfolder_path, "Order_parameters.txt")
-        if not os.path.isfile(op_file_path):
-            print(f"Missing data file in {subfolder}")
-            continue
+    if not order_parameter_path.is_file():
+        print(f"Skipping {run_dir}: missing Order_parameters.txt")
+        return None
 
-        try:
-            data_v = np.loadtxt(op_file_path, skiprows=1)
-        except Exception as e:
-            print(f"Error reading data file: {op_file_path}, {e}")
-            continue
+    try:
+        with input_json_path.open("r") as f:
+            params = json.load(f)
+    except Exception as exc:
+        print(f"Skipping {run_dir}: could not read input.json: {exc}")
+        return None
 
-        if data_v.ndim == 1:
-            data_v = np.expand_dims(data_v, axis=0)
+    try:
+        data = read_order_parameters(order_parameter_path)
+    except Exception as exc:
+        print(f"Skipping {run_dir}: could not read Order_parameters.txt: {exc}")
+        return None
 
-        v = np.sqrt(data_v[:, 0] ** 2)
-        range_start = int(0.9 * len(v))
-        if range_start < 1:
-            continue
+    if len(data) < 2:
+        print(f"Skipping {run_dir}: not enough time points")
+        return None
 
-        v_range = slice(range_start, len(v))
+    start = int((1.0 - window_fraction) * len(data))
+    start = max(start, 0)
+    late_time = data[start:]
 
-        v_mean = np.mean(v[v_range])
-        v_var = np.var(v[v_range])
-        E_spring_mean = np.mean(data_v[v_range, 1])
-        speed_mean = np.mean(data_v[v_range, 2])
-        pol = np.mean(data_v[v_range, 3])
-        pol_var=np.var(data_v[v_range,3])
+    # Column convention inherited from the simulation output:
+    # 0: velocity/order-like quantity, 1: E_spring, 2: speed, 3: polarization
+    v_abs = np.abs(late_time[:, 0])
+    E_spring = late_time[:, 1]
+    speed = late_time[:, 2]
+    polarization = late_time[:, 3]
 
-        line = f"{json_data['N']} {json_data['D_0']:.2f} {json_data['v_0']:.2f} {json_data['range']:.2f} {json_data['delta_t']:.2f} {json_data['dt']:.5f} {json_data['c']:.2f} {v_mean:.4f} {v_var:.4f} {E_spring_mean:.4f} {speed_mean:.4f} {pol:.4f} {pol_var:.4f}\n"
-        v_file.write(line)
+    return {
+        "N": int(params.get("N", -1)),
+        "D_0": float(params.get("D_0", np.nan)),
+        "v_0": float(params.get("v_0", np.nan)),
+        "range": float(params.get("range", np.nan)),
+        "delta_t": float(params.get("delta_t", np.nan)),
+        "dt": float(params.get("dt", np.nan)),
+        "J": float(params.get("J", np.nan)),
+        "v_mean": float(np.mean(v_abs)),
+        "v_var": float(np.var(v_abs)),
+        "E_spring": float(np.mean(E_spring)),
+        "speed_mean": float(np.mean(speed)),
+        "polarization": float(np.mean(polarization)),
+        "pol_var": float(np.var(polarization)),
+    }
 
-print("Processing complete.")
-  
-  
+
+def write_summary(rows: list[dict], output_path: Path) -> None:
+    """Write summary rows as a whitespace-separated table."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with output_path.open("w") as f:
+        f.write(HEADER)
+
+        for row in rows:
+            f.write(
+                f"{row['N']} "
+                f"{row['D_0']:.6g} "
+                f"{row['v_0']:.6g} "
+                f"{row['range']:.6g} "
+                f"{row['delta_t']:.6g} "
+                f"{row['dt']:.6g} "
+                f"{row['J']:.6g} "
+                f"{row['v_mean']:.6g} "
+                f"{row['v_var']:.6g} "
+                f"{row['E_spring']:.6g} "
+                f"{row['speed_mean']:.6g} "
+                f"{row['polarization']:.6g} "
+                f"{row['pol_var']:.6g}\n"
+            )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Summarize delayed Vicsek simulation output folders."
+    )
+
+    parser.add_argument(
+        "--run-dir",
+        type=Path,
+        required=True,
+        help="Directory containing simulation output folders.",
+    )
+
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("analysis/polarization_summary.txt"),
+        help="Output summary table.",
+    )
+
+    parser.add_argument(
+        "--window-fraction",
+        type=float,
+        default=0.1,
+        help="Final fraction of the time series used for late-time averages.",
+    )
+
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    if not args.run_dir.is_dir():
+        raise FileNotFoundError(f"Run directory not found: {args.run_dir}")
+
+    input_files = sorted(args.run_dir.rglob("input.json"))
+
+    if not input_files:
+        raise FileNotFoundError(f"No input.json files found below {args.run_dir}")
+
+    rows = []
+
+    for input_json_path in input_files:
+        row = summarize_single_run(input_json_path, args.window_fraction)
+        if row is not None:
+            rows.append(row)
+
+    if not rows:
+        raise RuntimeError("No valid simulation folders were summarized.")
+
+    rows.sort(key=lambda r: (r["D_0"], r["delta_t"], r["J"], r["v_0"]))
+
+    write_summary(rows, args.output)
+
+    print(f"Processed {len(rows)} simulation folders.")
+    print(f"Wrote summary to: {args.output}")
+
+
+if __name__ == "__main__":
+    main()
