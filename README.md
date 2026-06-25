@@ -26,7 +26,9 @@ The code supports configurable parameters such as particle number, noise strengt
 
 ```text
 .
-├── analysis/                     # Jupyter/Python scripts for visualization and post-processing
+├── analysis/
+│    ├── example_quiver_animation.ipynb # optional visual notebook
+│    └── plot_order_parameter.py        # simple reproducible analysis script
 ├── example_local/                # local example input/output
 ├── example_slurm/                # generated SLURM parameter sweep inputs
 ├── include/                      # Header files for dynamics, interaction rules, I/O, and observables

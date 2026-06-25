@@ -32,3 +32,8 @@ __pycache__/
 # OS/editor files
 .DS_Store
 .vscode/
+
+# larger file formats
+*.html
+*.mp4
+*.png
