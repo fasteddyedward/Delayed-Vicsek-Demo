@@ -20,53 +20,27 @@ using json = nlohmann::json;
 
 int main(int argc, char *argv[])
 {
-
-    // /////////////////////////////////////////////////////////////////////
-    // // === Option 1: Press F5 directly or ctrl+alt+n to debug and run the file directly  ===
-    // cout<< "Starting Option 1: run with local debug" << endl;
-    // cout<< "If not working, did you run ./submit_input_params already so that run_local_debug/parameters.txt is created?"<<endl;
-    // int index = 0;  // Local test index
-    // ifstream file("run_local_debug/parameters.txt");
-
-    // // === Option 2: Use this block for SLURM or CLI runs ===
-    // cout << "Starting Option 2: run with submit_input_params.sh" << endl;
-    // cout << "If not working, are you sure that you compiled the main.cpp again?"<<endl;
-    // if (argc != 2) {
-    //     cerr << "Usage: " << argv[0] << " <index>" << endl;
-    //     return 1;
-    // }
-    // int index = atoi(argv[1]);
-    // ifstream file("parameters.txt");
-    // /////////////////////////////////////////////////////////////////
-
-    // -----------------------------------------------------------------------------
     // Choose input mode
     //
-    // Mode 1: default example mode
-    //   ./build/delayed_vicsek
+    // Mode 1 (argc == 1): default example mode
+    //   Press F5 or ctrl+alt+N to directly run this main.cpp with example_local input.json file
     //
-    // Mode 2: direct JSON input mode
+    // Mode 2 (argc == 2): direct JSON input mode
     //   ./build/delayed_vicsek path/to/input.json
     //
-    // Mode 3: legacy batch mode
+    // Mode 3 (argc == 3): SLURM batch submission mode
     //   ./build/delayed_vicsek --index INDEX
-    //   This reads parameters.txt in the current working directory.
+    //   This reads parameters.txt in the current working directory, and submits the index-th entry as the job parameter to SLURM.
     // -----------------------------------------------------------------------------
-
     json jsonData;
     std::string input_json_file;
-    cout<<"argc=="<<argc<<endl;
-    for (int i=0;i<argc;i++){
-        cout<<"argv="<<argv[i]<<endl;
-    }
     if (argc == 1)
     {
         // Default example mode.
         // Try both paths so the executable works when launched either from
         // the repository root or from inside src/.
         std::vector<std::string> candidate_paths = {
-            "../example/input.json",
-            "../example/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.5, dt=0.01/input.json"
+            "../example_local/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.5, dt=0.01/input.json"
         };
 
         bool found_default_input = false;
@@ -86,8 +60,7 @@ int main(int argc, char *argv[])
         {
             std::cerr << "No input file was provided, and no default example input file was found.\n"
                     << "Expected one of:\n"
-                    << "  src/example/input.json\n"
-                    << "  example/input.json\n"
+                    << "example_local/N=200, D_0=0.01, J=1.0, v_0=0.5, aligned_init=1, delta_t=0.5, dt=0.01/input.json\n"
                     << "\nUsage:\n"
                     << "  " << argv[0] << "\n"
                     << "  " << argv[0] << " path/to/input.json\n"
@@ -256,7 +229,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            cout << "Warning: you did not choose an engine to run with! Check for typo Vicsek_XY_FU or Vicsek_XY_BU" << endl;
+            std::cerr << "Warning: you did not choose an engine to run with! Check for typo Vicsek_XY_FU or Vicsek_XY_BU" << endl;
             return 1;
         }
 

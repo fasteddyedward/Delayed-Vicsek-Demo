@@ -27,7 +27,8 @@ The code supports configurable parameters such as particle number, noise strengt
 ```text
 .
 ├── analysis/                     # Jupyter/Python scripts for visualization and post-processing
-├── example/                      # Example input files, generated parameter lists, and sample output folders
+├── example_local/                # local example input/output
+├── example_slurm/                # generated SLURM parameter sweep inputs
 ├── include/                      # Header files for dynamics, interaction rules, I/O, and observables
 ├── scripts/                      # SLURM and workflow scripts
 │   ├── generate_and_submit_slurm.sh
@@ -127,7 +128,7 @@ scripts/generate_and_submit_slurm.sh
 scripts/submit_array_sbatch.sh
 ```
 
-The generator script creates input folders, writes `input.json` files, records the generated input paths in `example/parameters.txt`, compiles the code, and submits one SLURM array job.
+The generator script creates input folders, writes `input.json` files, records the generated input paths in `example_slurm/parameters.txt`, compiles the code, and submits one SLURM array job.
 
 Run:
 
