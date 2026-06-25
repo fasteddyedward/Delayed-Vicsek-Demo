@@ -9,7 +9,7 @@ late-time averages over the final fraction of the recorded time series and write
 one compact summary table.
 
 Example:
-    python analysis/summarize_order_parameters.py \
+    python3 analysis/summarize_order_parameters.py \
         --run-dir example_slurm \
         --output analysis/polarization_summary.txt
 """
@@ -25,21 +25,21 @@ import numpy as np
 
 HEADER = (
     "N D_0 v_0 range delta_t dt J "
-    "v_mean v_var E_spring speed_mean polarization pol_var\n"
+    "polarization pol_var\n"
 )
 
 
 def read_order_parameters(path: Path) -> np.ndarray:
     """Read Order_parameters.txt and return a 2D NumPy array."""
     data = np.loadtxt(path, skiprows=1)
-
     if data.ndim == 1:
-        data = np.expand_dims(data, axis=0)
+        data = np.expand_dims(data, axis=1)
 
+    # print(np.shape(data))
     return data
 
 
-def summarize_single_run(input_json_path: Path, window_fraction: float) -> dict | None:
+def summarize_single_run(input_json_path: Path, window_fraction=0.1) -> dict | None:
     """Summarize one simulation folder."""
     run_dir = input_json_path.parent
     order_parameter_path = run_dir / "Order_parameters.txt"
@@ -61,21 +61,16 @@ def summarize_single_run(input_json_path: Path, window_fraction: float) -> dict 
         print(f"Skipping {run_dir}: could not read Order_parameters.txt: {exc}")
         return None
 
-    if len(data) < 2:
-        print(f"Skipping {run_dir}: not enough time points")
-        return None
 
     start = int((1.0 - window_fraction) * len(data))
     start = max(start, 0)
     late_time = data[start:]
-
+    # print("start="+str(start))
+    # print("len="+str(len(data)))
     # Column convention inherited from the simulation output:
-    # 0: velocity/order-like quantity, 1: E_spring, 2: speed, 3: polarization
-    v_abs = np.abs(late_time[:, 0])
-    E_spring = late_time[:, 1]
-    speed = late_time[:, 2]
-    polarization = late_time[:, 3]
-
+    # 0: polarization
+    polarization = late_time[:, 0]
+    # print(polarization)
     return {
         "N": int(params.get("N", -1)),
         "D_0": float(params.get("D_0", np.nan)),
@@ -84,10 +79,6 @@ def summarize_single_run(input_json_path: Path, window_fraction: float) -> dict 
         "delta_t": float(params.get("delta_t", np.nan)),
         "dt": float(params.get("dt", np.nan)),
         "J": float(params.get("J", np.nan)),
-        "v_mean": float(np.mean(v_abs)),
-        "v_var": float(np.var(v_abs)),
-        "E_spring": float(np.mean(E_spring)),
-        "speed_mean": float(np.mean(speed)),
         "polarization": float(np.mean(polarization)),
         "pol_var": float(np.var(polarization)),
     }
@@ -109,10 +100,6 @@ def write_summary(rows: list[dict], output_path: Path) -> None:
                 f"{row['delta_t']:.6g} "
                 f"{row['dt']:.6g} "
                 f"{row['J']:.6g} "
-                f"{row['v_mean']:.6g} "
-                f"{row['v_var']:.6g} "
-                f"{row['E_spring']:.6g} "
-                f"{row['speed_mean']:.6g} "
                 f"{row['polarization']:.6g} "
                 f"{row['pol_var']:.6g}\n"
             )
